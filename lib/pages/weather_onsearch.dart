@@ -21,7 +21,7 @@ class WeatherOnsearch extends StatelessWidget {
                       onPressed: () {},
                       icon: const Icon(Icons.arrow_back),
                     ),
-                    // "Add to List" Button
+
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -29,9 +29,7 @@ class WeatherOnsearch extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(
-                          20,
-                        ), // Rounded pill shape
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         children: const [
@@ -42,9 +40,9 @@ class WeatherOnsearch extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(width: 8), // Space between text and icon
+                          SizedBox(width: 8),
                           Icon(
-                            Icons.add_circle_outline, // Slightly nicer icon
+                            Icons.add_circle_outline,
                             color: Color.fromARGB(255, 0, 0, 0),
                             size: 18,
                           ),
