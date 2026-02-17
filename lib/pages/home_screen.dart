@@ -1,200 +1,180 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
+import 'package:weather/models/weather_model.dart';
+import 'package:weather/models/weatherbundel_model.dart';
+import 'package:weather/pages/example.dart';
+import 'package:weather/pages/search_screen.dart';
+import 'package:weather/services/weather_services.dart';
+import 'package:weather/widgets/weather_detail_section.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _weatherService = WeatherServices();
+
+  late Future<WeatherBundle> _bundelFuture;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _bundelFuture = _weatherService.fetchAllData("Islamabad");
+  }
+
+  DateTime getCityTime(int timestamp, int timezoneOffset) {
+    return DateTime.fromMillisecondsSinceEpoch(
+      timestamp * 1000,
+      isUtc: true,
+    ).add(Duration(seconds: timezoneOffset));
+  }
+
+  String formatTime(int timestamp, int timezoneOffset) {
+    final date = getCityTime(timestamp, timezoneOffset);
+    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    // 12:00 PM case handle karein
+    final displayHour = hour == 0 ? 12 : hour;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return "$displayHour:$minute $period";
+  }
+
+  String formatDuration(Duration d) {
+    if (d.isNegative) return "0h 0m";
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60);
+    return "${hours}h ${minutes}m";
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 18),
-            child: Column(
-              // mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      //navigate to search screen
-                    },
-                    child: Container(
-                      height: 50,
-                      // width: 370,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Search Location"),
-                            Icon(Icons.search),
-                          ],
+        child: FutureBuilder<WeatherBundle>(
+          future: _bundelFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            }
+
+            if (snapshot.hasData) {
+              final bundle = snapshot.data!;
+
+              final weather = bundle.weather;
+              final extra = bundle.extra;
+              final aq = bundle.airQuality;
+
+              final sunRiseCity = getCityTime(
+                weather.sunrise,
+                weather.timezone,
+              );
+              final sunSetCity = getCityTime(weather.sunset, weather.timezone);
+              final lengthOfDay = sunSetCity.difference(sunRiseCity);
+
+              final currentCityTime = DateTime.now().toUtc().add(
+                Duration(seconds: weather.timezone),
+              );
+              Duration remainingDaylight = sunSetCity.difference(
+                currentCityTime,
+              );
+
+              if (remainingDaylight.isNegative) {
+                remainingDaylight = Duration.zero;
+              }
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 22,
+                    horizontal: 18,
+                  ),
+                  child: Column(
+                    // mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: OpenContainer(
+                          // 1. MATCH YOUR DESIGN: Set the color and shape to match your Container
+                          closedColor: Colors.grey.shade200,
+                          closedElevation:
+                              0, // Remove shadow to keep your flat look
+                          closedShape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+
+                          // 2. THE TRANSITION TYPE: Standard "fade through" used by Google apps
+                          transitionType: ContainerTransitionType.fadeThrough,
+                          transitionDuration: const Duration(milliseconds: 400),
+
+                          // 3. THE DESTINATION: Where to go when clicked
+                          openBuilder: (context, action) {
+                            return const SearchScreen(); // Replace with your actual Search Screen
+                          },
+
+                          // 4. YOUR EXISTING WIDGET (The "Closed" state)
+                          closedBuilder: (context, openContainer) {
+                            return Container(
+                              height: 50,
+                              // width: 370, // Optional: Let parent control width
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: const [
+                                    Text("Search Location"),
+                                    Icon(Icons.search),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 80),
+                      SizedBox(height: 80),
 
-                Container(
-                  height: 180,
-                  width: 180,
-                  child: Image.asset("assets/images/on_boarding.png"),
-                ),
-
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Islamabad ",
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+                      WeatherDetailsSection(
+                        city: weather.cityName,
+                        temperature:
+                            "${weather.temprature.toStringAsFixed(0)}°",
+                        time: formatTime(
+                          DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                          weather.timezone,
+                        ),
+                        uv: extra.uvIndex.toStringAsFixed(1),
+                        rain:
+                            "${(extra.rainProbability! * 100).toStringAsFixed(0)}%",
+                        airQuality: aq.aqi.toString(),
+                        sunrise: formatTime(weather.sunrise, weather.timezone),
+                        sunset: formatTime(weather.sunset, weather.timezone),
+                        dayLength: formatDuration(lengthOfDay),
+                        remainingDaylight: formatDuration(remainingDaylight),
+                        imagePath: "assets/images/on_boarding.png",
                       ),
-                    ),
-                    Icon(Icons.location_on),
-                  ],
-                ),
-
-                Text(
-                  "31°",
-                  style: TextStyle(fontSize: 65, fontWeight: FontWeight.bold),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: const [
-                        WeatherInfo(title: "TIME", value: "11:25 AM"),
-                        WeatherInfo(title: "UV", value: "4"),
-                        WeatherInfo(title: "% RAIN", value: "58%"),
-                        WeatherInfo(title: "AQ", value: "22"),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: SizedBox(
-                    height: 220,
-                    width: double.infinity,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Stack(
-                          children: [
-                            CustomPaint(
-                              size: Size(constraints.maxWidth, 150),
-                              painter: SunPathPainter(),
-                            ),
-
-                            Positioned(
-                              left: 40,
-                              top: 10,
-                              child: _buildTimeLabel("Sunrise", "06:25 AM"),
-                            ),
-                            Positioned(
-                              right: 35,
-                              top: 10,
-                              child: _buildTimeLabel("Sunset", "08:30 PM"),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 60,
-                              child: Text(
-                                "Horizon",
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-
-                            Positioned(
-                              left: 0,
-                              bottom: 40,
-                              child: RichText(
-                                text: TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                  children: [
-                                    TextSpan(text: "Length of Day: "),
-                                    TextSpan(
-                                      text: "13h 22m",
-                                      style: TextStyle(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          0,
-                                          0,
-                                          0,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 0,
-                              bottom: 10,
-                              child: RichText(
-                                text: TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                  children: [
-                                    TextSpan(text: "Remaining Daylight: "),
-                                    TextSpan(
-                                      text: "9h 12m",
-                                      style: TextStyle(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          0,
-                                          0,
-                                          0,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              );
+            }
+            return const Center(child: Text("No Data"));
+          },
         ),
       ),
     );
