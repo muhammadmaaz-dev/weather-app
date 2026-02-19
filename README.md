@@ -1,4 +1,4 @@
-# 🌤 SkyCast - Flutter Weather App
+# 🌤 Climora - Flutter Weather App
 
 SkyCast is a modern weather application built with Flutter.  
 It provides real-time weather data, clean UI visuals, and dynamic weather icons based on current conditions.
