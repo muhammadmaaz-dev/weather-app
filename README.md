@@ -1,16 +1,31 @@
-# weather
+# 🌤 SkyCast - Flutter Weather App
 
-A new Flutter project.
+SkyCast is a modern weather application built with Flutter.  
+It provides real-time weather data, clean UI visuals, and dynamic weather icons based on current conditions.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- 🌍 Real-time weather data
+- 📍 Search by city
+- 🌡 Current temperature display
+- ☁ Dynamic weather condition images
+- 🌅 Sunrise & Sunset info
+- 💨 Wind speed & humidity
+- 🎨 Clean and responsive UI
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 🛠 Tech Stack
+
+- **Flutter**
+- **Dart**
+- Weather API (e.g. OpenWeatherMap)
+- REST API integration
+
+---
+
+## 📂 Project Structure
+
