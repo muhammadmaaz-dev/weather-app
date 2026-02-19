@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class WeatherCard extends StatelessWidget {
   const WeatherCard({super.key});
@@ -6,18 +7,18 @@ class WeatherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(6.w),
       child: Container(
-        width: 380,
-        padding: const EdgeInsets.all(32),
+        width: 340.w,
+        padding: EdgeInsets.all(28.w),
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -37,32 +38,32 @@ class WeatherCard extends StatelessWidget {
                     const Text(
                       "Mumbai",
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF333333),
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    SizedBox(height: 4.h),
                     // Using RichText to make the degree symbol smaller and aligned top
                     RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         children: [
                           TextSpan(
                             text: "20",
                             style: TextStyle(
-                              fontSize: 60,
+                              fontSize: 54.sp,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color: const Color(0xFF333333),
                               height: 1.0,
                             ),
                           ),
                           TextSpan(
                             text: "°",
                             style: TextStyle(
-                              fontSize: 40,
+                              fontSize: 36.sp,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color: const Color(0xFF333333),
                               fontFeatures: [FontFeature.superscripts()],
                             ),
                           ),
@@ -76,11 +77,11 @@ class WeatherCard extends StatelessWidget {
                 // Note: Using a standard icon here. For the exact multi-colored
                 // vector look, you would usually use an SvgPicture.asset.
                 Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  child: const Icon(
+                  margin: EdgeInsets.only(top: 8.h),
+                  child: Icon(
                     Icons.cloud_queue_rounded, // Outline cloud look
-                    size: 100,
-                    color: Color(0xFF64B5F6), // Light blue
+                    size: 90.w,
+                    color: const Color(0xFF64B5F6), // Light blue
                   ),
                 ),
               ],

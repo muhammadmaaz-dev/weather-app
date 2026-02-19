@@ -23,6 +23,18 @@ class WeatherServices {
     }
   }
 
+  Future<WeatherModel> fetchWeatherByLocation(double lat, double lon) async {
+    final url = Uri.parse(
+      'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric',
+    );
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      return WeatherModel.fromjson(json.decode(response.body));
+    } else {
+      throw Exception("Unable to Load Weather");
+    }
+  }
+
   Future<ExtraWeather> extraWeather(double lat, double lon) async {
     final url = Uri.parse(
       'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&units=metric&appid=$apiKey',
@@ -51,17 +63,38 @@ class WeatherServices {
     }
   }
 
-  Future<WeatherBundle> fetchAllData(String cityName) async {
-    final weather = await fetchWeather(cityName);
+  Future<WeatherBundle> fetchAllDataByLocation(double lat, double lon) async {
+    final weather = await fetchWeatherByLocation(lat, lon);
 
     final results = await Future.wait([
-      extraWeather(weather.lat, weather.lon),
-      fetchAirQuality(weather.lat, weather.lon),
+      extraWeather(lat, lon),
+      fetchAirQuality(lat, lon),
     ]);
 
     final extra = results[0] as ExtraWeather;
     final air = results[1] as AirQuality;
 
     return WeatherBundle(weather: weather, extra: extra, airQuality: air);
+  }
+
+  Future<WeatherBundle> fetchAllData(String cityName) async {
+    try {
+      // 1. Get coordinates for the city
+      final weather = await fetchWeather(cityName);
+
+      // 2. Fetch extra data using those coordinates
+      final results = await Future.wait([
+        extraWeather(weather.lat, weather.lon),
+        fetchAirQuality(weather.lat, weather.lon),
+      ]);
+
+      return WeatherBundle(
+        weather: weather,
+        extra: results[0] as ExtraWeather,
+        airQuality: results[1] as AirQuality,
+      );
+    } catch (e) {
+      throw Exception("Failed to fetch weather data: $e");
+    }
   }
 }

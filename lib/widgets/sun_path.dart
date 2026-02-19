@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:weather/pages/home_screen.dart';
 
 class SunPathCard extends StatelessWidget {
@@ -17,36 +18,40 @@ class SunPathCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(8.w),
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20.r),
       ),
       child: SizedBox(
-        height: 220,
+        height: 200.h,
         width: double.infinity,
         child: Stack(
           children: [
             CustomPaint(
-              size: const Size(double.infinity, 150),
+              size: Size(double.infinity, 135.h),
               painter: SunPathPainter(),
             ),
 
             Positioned(
-              left: 40,
-              top: 10,
+              left: 36.w,
+              top: 8.h,
               child: _timeLabel("Sunrise", sunrise),
             ),
-            Positioned(right: 35, top: 10, child: _timeLabel("Sunset", sunset)),
+            Positioned(
+              right: 32.w,
+              top: 8.h,
+              child: _timeLabel("Sunset", sunset),
+            ),
 
             Positioned(
               left: 0,
-              bottom: 40,
+              bottom: 36.h,
               child: _richText("Length of Day: ", dayLength),
             ),
             Positioned(
               left: 0,
-              bottom: 10,
+              bottom: 8.h,
               child: _richText("Remaining Daylight: ", remainingDaylight),
             ),
           ],
@@ -58,9 +63,15 @@ class SunPathCard extends StatelessWidget {
   Widget _timeLabel(String label, String time) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(time, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[400], fontSize: 10.sp),
+        ),
+        SizedBox(height: 3.h),
+        Text(
+          time,
+          style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+        ),
       ],
     );
   }
@@ -68,7 +79,7 @@ class SunPathCard extends StatelessWidget {
   Widget _richText(String title, String value) {
     return RichText(
       text: TextSpan(
-        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
         children: [
           TextSpan(text: title),
           TextSpan(

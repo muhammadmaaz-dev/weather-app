@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:weather/pages/home_screen.dart';
 
 class GetStarted extends StatelessWidget {
   const GetStarted({super.key});
@@ -9,43 +11,56 @@ class GetStarted extends StatelessWidget {
       backgroundColor: Color(0xfff3f4f6),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: EdgeInsets.symmetric(horizontal: 22.w),
           child: Column(
             children: [
               const Spacer(),
 
-              Container(child: Image.asset("assets/images/on_boarding.png")),
+              Container(child: Image.asset("assets/images/cloudy.png")),
 
-              const SizedBox(height: 50),
+              SizedBox(height: 48.h),
 
-              const Text(
+              Text(
                 "Your Sky,",
-                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 38.sp, fontWeight: FontWeight.bold),
               ),
-              const Text(
+              Text(
                 "Simplified",
                 style: TextStyle(
-                  fontSize: 50,
+                  fontSize: 48.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent,
                 ),
               ),
-              const SizedBox(height: 25),
-              const Text(
+              SizedBox(height: 23.h),
+              Text(
                 "Get Accurate Forecast and Beautiful Weather Visualization for your\n Location",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.grey, height: 1.5),
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.grey,
+                  height: 1.5,
+                ),
               ),
               const Spacer(),
 
               SizedBox(
-                height: 75,
-                width: 340,
+                height: 68.h,
+                width: 320.w,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => HomeScreen()),
+                      (route) => false,
+                    );
+                  },
                   child: Text(
                     "Get Started",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
@@ -55,7 +70,7 @@ class GetStarted extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 50),
+              SizedBox(height: 48.h),
             ],
           ),
         ),

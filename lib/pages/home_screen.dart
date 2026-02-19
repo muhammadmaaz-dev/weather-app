@@ -1,15 +1,15 @@
-import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'dart:math' as math show pow;
 import 'dart:ui' as ui;
 
-import 'package:flutter/rendering.dart';
-import 'package:weather/models/weather_model.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:weather/models/weatherbundel_model.dart';
-import 'package:weather/pages/example.dart';
 import 'package:weather/pages/search_screen.dart';
 import 'package:weather/services/weather_services.dart';
 import 'package:weather/widgets/weather_detail_section.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,39 +19,114 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _weatherService = WeatherServices();
-
-  late Future<WeatherBundle> _bundelFuture;
+  final WeatherServices _weatherServices = WeatherServices();
+  WeatherBundle? _weatherBundle;
+  bool _isLoading = true;
+  String _errorMessage = '';
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    _bundelFuture = _weatherService.fetchAllData("Islamabad");
+    _determinePositionAndFetchWeather();
   }
 
-  DateTime getCityTime(int timestamp, int timezoneOffset) {
-    return DateTime.fromMillisecondsSinceEpoch(
+  Future<void> _determinePositionAndFetchWeather() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // 1. Check GPS
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _errorMessage = 'Location services are disabled.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // 2. Check Permissions
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _errorMessage = 'Location permissions are denied';
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _errorMessage = 'Location permissions are permanently denied.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // 3. Get Position & Fetch Weather
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final data = await _weatherServices.fetchAllDataByLocation(
+        position.latitude,
+        position.longitude,
+      );
+
+      setState(() {
+        _weatherBundle = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  // --- Helper Functions ---
+  String _formatTime(int timestamp, int timezoneOffset) {
+    final DateTime date = DateTime.fromMillisecondsSinceEpoch(
       timestamp * 1000,
       isUtc: true,
     ).add(Duration(seconds: timezoneOffset));
+    return DateFormat('hh:mm a').format(date);
   }
 
-  String formatTime(int timestamp, int timezoneOffset) {
-    final date = getCityTime(timestamp, timezoneOffset);
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
-    // 12:00 PM case handle karein
-    final displayHour = hour == 0 ? 12 : hour;
-    final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour >= 12 ? 'PM' : 'AM';
-    return "$displayHour:$minute $period";
+  String _formatDuration(int start, int end) {
+    final duration = Duration(seconds: end - start);
+    return "${duration.inHours}h ${duration.inMinutes.remainder(60)}m";
   }
 
-  String formatDuration(Duration d) {
-    if (d.isNegative) return "0h 0m";
-    final hours = d.inHours;
-    final minutes = d.inMinutes.remainder(60);
-    return "${hours}h ${minutes}m";
+  String getWeatherImage(String? condition) {
+    if (condition == null) {
+      return "assets/images/default.png";
+    }
+
+    final c = condition.toLowerCase().trim();
+
+    if (c.contains('thunder')) {
+      return "assets/images/thunder.png";
+    } else if (c.contains('rain') || c.contains('drizzle')) {
+      return "assets/images/rainy.png";
+    } else if (c.contains('snow')) {
+      return "assets/images/snow.png";
+    } else if (c.contains('clear')) {
+      return "assets/images/sunny.png";
+    } else if (c.contains('cloud') ||
+        c.contains('mist') ||
+        c.contains('fog') ||
+        c.contains('haze') ||
+        c.contains('dust') ||
+        c.contains('smoke')) {
+      return "assets/images/cloudy.png";
+    }
+
+    return "assets/images/default.png";
   }
 
   @override
@@ -59,49 +134,35 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: FutureBuilder<WeatherBundle>(
-          future: _bundelFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            }
-
-            if (snapshot.hasData) {
-              final bundle = snapshot.data!;
-
-              final weather = bundle.weather;
-              final extra = bundle.extra;
-              final aq = bundle.airQuality;
-
-              final sunRiseCity = getCityTime(
-                weather.sunrise,
-                weather.timezone,
-              );
-              final sunSetCity = getCityTime(weather.sunset, weather.timezone);
-              final lengthOfDay = sunSetCity.difference(sunRiseCity);
-
-              final currentCityTime = DateTime.now().toUtc().add(
-                Duration(seconds: weather.timezone),
-              );
-              Duration remainingDaylight = sunSetCity.difference(
-                currentCityTime,
-              );
-
-              if (remainingDaylight.isNegative) {
-                remainingDaylight = Duration.zero;
-              }
-              return SingleChildScrollView(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage.isNotEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(_errorMessage, textAlign: TextAlign.center),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLoading = true;
+                          _errorMessage = '';
+                        });
+                        _determinePositionAndFetchWeather();
+                      },
+                      child: const Text("Retry"),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: 22,
                     horizontal: 18,
                   ),
                   child: Column(
-                    // mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Center(
                         child: OpenContainer(
@@ -125,16 +186,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           // 4. YOUR EXISTING WIDGET (The "Closed" state)
                           closedBuilder: (context, openContainer) {
                             return Container(
-                              height: 50,
+                              height: 48.h,
                               // width: 370, // Optional: Let parent control width
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(16.r),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 18.w),
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -148,47 +207,69 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                      SizedBox(height: 80),
 
+                      SizedBox(height: 72.h),
                       WeatherDetailsSection(
-                        city: weather.cityName,
+                        city: _weatherBundle!.weather.cityName,
                         temperature:
-                            "${weather.temprature.toStringAsFixed(0)}°",
-                        time: formatTime(
-                          DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                          weather.timezone,
-                        ),
-                        uv: extra.uvIndex.toStringAsFixed(1),
+                            "${_weatherBundle!.weather.temprature.round()}°",
+                        time: DateFormat('hh:mm a').format(DateTime.now()),
+                        uv: _weatherBundle!.extra.uvIndex.toStringAsFixed(0),
                         rain:
-                            "${(extra.rainProbability! * 100).toStringAsFixed(0)}%",
-                        airQuality: aq.aqi.toString(),
-                        sunrise: formatTime(weather.sunrise, weather.timezone),
-                        sunset: formatTime(weather.sunset, weather.timezone),
-                        dayLength: formatDuration(lengthOfDay),
-                        remainingDaylight: formatDuration(remainingDaylight),
-                        imagePath: "assets/images/on_boarding.png",
+                            "${(_weatherBundle!.extra.rainProbability! * 100).round()}%",
+                        airQuality: _weatherBundle!.airQuality.aqi.toString(),
+                        sunrise: _formatTime(
+                          _weatherBundle!.weather.sunrise,
+                          _weatherBundle!.weather.timezone,
+                        ),
+                        sunset: _formatTime(
+                          _weatherBundle!.weather.sunset,
+                          _weatherBundle!.weather.timezone,
+                        ),
+                        dayLength: _formatDuration(
+                          _weatherBundle!.weather.sunrise,
+                          _weatherBundle!.weather.sunset,
+                        ),
+                        // Calculate remaining daylight dynamically
+                        remainingDaylight:
+                            (_weatherBundle!.weather.sunset >
+                                (DateTime.now().millisecondsSinceEpoch / 1000))
+                            ? _formatDuration(
+                                (DateTime.now().millisecondsSinceEpoch / 1000)
+                                    .round(),
+                                _weatherBundle!.weather.sunset,
+                              )
+                            : "0h 0m",
+                        imagePath: getWeatherImage(
+                          _weatherBundle!.weather.mainCondition,
+                        ),
+
+                        speed: _weatherBundle!.weather.speed.toString(),
+                        desc: _weatherBundle!.weather.desc.toString(),
                       ),
                     ],
                   ),
                 ),
-              );
-            }
-            return const Center(child: Text("No Data"));
-          },
-        ),
+              ),
       ),
     );
   }
+}
 
-  Widget _buildTimeLabel(String label, String time) {
-    return Column(
-      children: [
-        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(time, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-      ],
-    );
-  }
+Widget _buildTimeLabel(String label, String time) {
+  return Column(
+    children: [
+      Text(
+        label,
+        style: TextStyle(color: Colors.grey[400], fontSize: 10.sp),
+      ),
+      SizedBox(height: 3.h),
+      Text(
+        time,
+        style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+      ),
+    ],
+  );
 }
 
 class WeatherInfo extends StatelessWidget {
@@ -204,17 +285,17 @@ class WeatherInfo extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 12,
+          style: TextStyle(
+            fontSize: 10.sp,
             color: Colors.grey,
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 4.h),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 18,
+          style: TextStyle(
+            fontSize: 16.sp,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),

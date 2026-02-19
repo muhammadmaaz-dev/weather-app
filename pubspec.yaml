@@ -36,6 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.6.0
   animations: ^2.1.1
+  intl: ^0.20.2
+  geolocator: ^14.0.2
+  flutter_screenutil: ^5.9.0
+
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +51,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -61,14 +71,23 @@ flutter:
 
 
   assets:
-    - assets\images\bg.png
-    - assets/images/on_boarding.png
+    - assets\images\overcast.png
+    - assets\images\rainy.png
+    - assets\images\cloudy.png
+    - assets\images\sunny.png
+    - assets\images\default.png
+    - assets\images\snow.png
+    - assets\images\thunder.png
+    - assets\images\app_icon.png
+    
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
+
+
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
